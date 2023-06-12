@@ -1,89 +1,25 @@
-MENU = {
-    "espresso": {
-        "ingredients": {
-            "water": 50,
-            "coffee": 18,
-        },
-        "cost": 1.5,
-    },
-    "latte": {
-        "ingredients": {
-            "water": 200,
-            "coffee": 24,
-            "milk": 150,
-        },
-        "cost": 2.5,
-    },
-    "cappuccino": {
-        "ingredients": {
-            "water": 250,
-            "coffee": 24,
-            "milk": 100,
-        },
-        "cost": 3.0,
-    }
-}
+from money_machine import MoneyMachine
+from coffee_maker import CoffeeMaker
+from menu_item import MenuItemFactory
 
-profit = 0
-
-resources = {
-    "water": 300,
-    "coffee": 100,
-    "milk": 200,
-}
+mm = MoneyMachine()
+cm = CoffeeMaker()
 
 
-def process_coins():
-    total = int(input("number of 10c: ")) * 0.1
-    total += int(input("number of 20c: ")) * 0.2
-    total += int(input("number of 50c: ")) * 0.5
-    total += int(input("number of 1€: ")) * 1.0
-    total += int(input("number of 2€: ")) * 2.0
-    return_money = input("return money(y/n): ")
-    if return_money == "y":
-        total = -1
-    return total
-
-
-def process_coffee(a_choice_ingredients):
-    for item in a_choice_ingredients:
-        resources[item] -= a_choice_ingredients[item]
-
-
-def sufficient_money(required):
-    an_amount = 0.0
-    while (an_amount < required) & (an_amount > -1.0):
-        print(f"input of coins, current {an_amount}€ of {required}€ ")
-        an_amount += process_coins()
-    return an_amount
-
-
-def sufficient_ingredients(a_choice_ingredients):
-    for item in a_choice_ingredients:
-        if a_choice_ingredients[item] >= resources[item]:
-            return False
-    return True
-
-
-def print_report():
-    print(f"water: {resources.get('water')}ml")
-    print(f"coffee: {resources.get('coffee')}g")
-    print(f"milk: {resources.get('milk')}ml")
-    print(f"money: {profit}€")
-
-
-def make_coffee(a_choice):
-    print(f"my choice: {a_choice}")
-    if sufficient_ingredients(a_choice["ingredients"]):
-        total = sufficient_money(a_choice["cost"])
-        if total >= 0:
+def make_coffee(choice_as_string, a_choice):
+    print(f"my choice: {a_choice.name}")
+    if a_choice.ingredients["water"] > 0 & cm.sufficient_ingredients(a_choice.ingredients):
+        mm.total = mm.sufficient_money(a_choice.cost)
+        if mm.total >= 0:
             print("starting process")
-            process_coffee(a_choice["ingredients"])
-            amount = total - a_choice["cost"]
-            print(f"please take your {a_choice}")
-            print(f"returning {amount}€")
+            cm.process_coffee(a_choice.ingredients)
+            mm.amount = mm.total - a_choice.cost
+            print(f"please take your {choice_as_string} ☕")
+            print(f"returning {mm.amount}€")
+            mm.profit += a_choice.cost
         else:
             print("process cancelled by user")
+            mm.total = 0
     else:
         print("insufficient ingredients")
 
@@ -91,24 +27,20 @@ def make_coffee(a_choice):
 cont = True
 while cont:
     choice = input("choose your desired drink (espresso, latte, cappuccino): ")
-    match choice:
-        case "off":
-            cont = False
-        case "report":
-            print_report()
-        case "cappuccino" | "latte" | "espresso":
-            make_coffee(MENU[choice])
-        case other:
-            print("incorrect command")
+    if choice == "off" or choice == "exit":
+        cont = False
+    elif choice == "report":
+        cm.print_report()
+        mm.print_report()
+    elif choice == "refill":
+        cm.refill_machine()
+    elif choice in MenuItemFactory.get_all_menu_items():
+        make_coffee(choice, MenuItemFactory.get_menu_item(choice))
+    else:
+        print("incorrect command")
 
 
-def print_hi(name, resources):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}, {resources.get("water")}')  # Press Ctrl+F8 to toggle the breakpoint.
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm', resources)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
